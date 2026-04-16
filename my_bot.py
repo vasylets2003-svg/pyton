@@ -24,7 +24,7 @@ async def forward_to_admin(message: types.Message):
 @dp.message(F.chat.id == ADMIN_ID, F.reply_to_message)
 async def reply_to_user(message: types.Message):
     user_id = message.reply_to_message.forward_from.id
-    await bot.send_message(user_id, f"Відповідь від підтримки:\n\n{message.text}")
+    await bot.send_message(user_id, f"Відповідь від Віки😜:\n\n{message.text}")
     await message.answer("Відправлено користувачу!")
 
 async def main():
