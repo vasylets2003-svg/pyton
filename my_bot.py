@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiohttp import web
 
 # ВАШІ НАЛАШТУВАННЯ
-API_TOKEN = '8227869466:AAEzjHRVuC8zAfaW9MEkUYaNMekK8ivLgBg'
+API_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_ID = 940533533
 
 bot = Bot(token=API_TOKEN)
