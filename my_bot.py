@@ -1,3 +1,4 @@
+import logging
 import os
 import asyncio
 from aiogram import Bot, Dispatcher, types, F
@@ -48,4 +49,7 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
+    asyncio.run(main())
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO) # додайте це
     asyncio.run(main())
