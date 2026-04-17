@@ -26,7 +26,7 @@ async def admin_reply(message: types.Message):
     
     try:
         # Шукаємо "🆔 ID:" і витягуємо все, що після нього
-        if "🆔 ID:" in original_text:
+        if "🆔 ID: " in original_text:
             target_id = original_text.split("🆔 ID: ")[1].strip()
             
             # Відправляємо відповідь
