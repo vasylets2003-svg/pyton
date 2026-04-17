@@ -15,16 +15,21 @@ user_registry = {}
 
 @dp.message(F.chat.id != ADMIN_ID)
 async def forward_to_admin(message: types.Message):
-    # Отримуємо юзернейм або ID
-    username = f"@{message.from_user.username}" if message.from_user.username else "Без логіна"
+    # Отримуємо ім'я користувача
+    user_name = message.from_user.full_name
+    # Отримуємо логін, якщо є
+    username = f" (@{message.from_user.username})" if message.from_user.username else ""
     
-    # Відправляємо адміну заявку
+    # Формуємо рядок
+    user_info = f"{user_name}{username}"
+    
+    # Відправляємо адміну
     admin_msg = await bot.send_message(
         ADMIN_ID, 
-        f"📩 Заявка: {message.text}\n👤 Логін: {username}\n🆔 ID: {message.chat.id}"
+        f"📩 Заявка: {message.text}\n👤 Користувач: {user_info}\n🆔 ID: {message.chat.id}"
     )
     
-    # ЗАПАМ'ЯТОВУЄМО ПРЯМО В ПАМ'ЯТІ
+    # Зберігаємо зв'язок
     user_registry[admin_msg.message_id] = message.chat.id
     
     await message.answer("✅ Заявку прийнято.")
