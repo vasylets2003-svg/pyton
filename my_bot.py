@@ -1,55 +1,44 @@
-import logging
 import os
 import asyncio
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 
-# Токен береться з налаштувань Render (Environment Variables)
 bot = Bot(token=os.getenv('BOT_TOKEN'))
 dp = Dispatcher()
 
-# Словник для зберігання зв'язку: {ID повідомлення адміна : ID користувача}
-user_registry = {}
-
 @dp.message(F.chat.id != 940533533)
 async def send_to_admin(message: types.Message):
-    # --- ОТРИМУЄМО ДАНІ ПРО КОРИСТУВАЧА ---
-    # Повне ім'я (наприклад: Вікторія)
-    full_name = message.from_user.full_name
-    # Логін (наприклад: @vika_user), якщо є
+    # Отримуємо дані
+    name = message.from_user.full_name
     username = f" (@{message.from_user.username})" if message.from_user.username else ""
     
-    # Формуємо детальне повідомлення
-    user_info = f"{full_name}{username}"
+    # ВАЖЛИВО: Ми ховаємо ID в кінці повідомлення, 
+    # щоб при відповіді (Reply) ми могли його легко прочитати
+    text = f"📩 Заявка: {message.text}\n👤 Хто: {name}{username}\n🆔 ID:{message.chat.id}"
     
-    # Надсилаємо адміну
-    msg = await bot.send_message(
-        940533533, 
-        f"📩 Заявка: {message.text}\n"
-        f"👤 Користувач: {user_info}\n"
-        f"🆔 ID: {message.chat.id}"
-    )
-    
-    # Запам'ятовуємо зв'язок
-    user_registry[msg.message_id] = message.chat.id
-    await message.answer("✅ Заявку прийнято. Чекайте на відповідь.")
+    await bot.send_message(940533533, text)
+    await message.answer("✅ Заявку прийнято.")
 
 @dp.message(F.chat.id == 940533533, F.reply_to_message)
 async def admin_reply(message: types.Message):
-    # Отримуємо ID користувача з нашої "пам'яті"
-    target_id = user_registry.get(message.reply_to_message.message_id)
+    # Беремо текст повідомлення, на яке ми відповіли
+    original_text = message.reply_to_message.text
     
-    if target_id:
-        await bot.send_message(target_id, f"Відповідь від Віки:\n\n{message.text}")
-        await message.answer("✅ Відправлено!")
-    else:
-        await message.answer("❌ Помилка: не можу знайти ID клієнта в пам'яті (можливо, бот перезавантажився).")
+    try:
+        # Шукаємо "🆔 ID:" і витягуємо все, що після нього
+        if "🆔 ID:" in original_text:
+            target_id = original_text.split("🆔 ID:")[1].strip()
+            
+            # Відправляємо відповідь
+            await bot.send_message(target_id, f"Відповідь від Віки:\n\n{message.text}")
+            await message.answer("✅ Відправлено!")
+        else:
+            await message.answer("❌ Не можу знайти ID в цьому повідомленні.")
+    except Exception as e:
+        await message.answer(f"❌ Помилка: {e}")
 
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main())
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO) # додайте це
     asyncio.run(main())
