@@ -14,7 +14,7 @@ async def send_to_admin(message: types.Message):
     
     # ВАЖЛИВО: Ми ховаємо ID в кінці повідомлення, 
     # щоб при відповіді (Reply) ми могли його легко прочитати
-    text = f"📩 Заявка: {message.text}\n👤 Хто: {name}{username}\n🆔 ID:{message.chat.id}"
+    text = f"📩 Заявка: {message.text}\n👤 Хто: {name}{username}\n🆔 ID: {message.chat.id}"
     
     await bot.send_message(940533533, text)
     await message.answer("✅ Заявку прийнято.")
