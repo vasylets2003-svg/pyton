@@ -3,50 +3,40 @@ import asyncio
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 
-API_TOKEN = os.getenv('BOT_TOKEN')
-ADMIN_ID = 940533533
-
-bot = Bot(token=API_TOKEN)
+# Токен з налаштувань Render
+bot = Bot(token=os.getenv('BOT_TOKEN'))
 dp = Dispatcher()
 
-# Словник: {ID повідомлення адміна : ID клієнта}
-# Це працює в пам'яті бота, поки він не перезавантажиться
+# Словник для пам'яті (ID повідомлення адміна : ID користувача)
 user_registry = {}
 
-@dp.message(F.chat.id != ADMIN_ID)
-async def forward_to_admin(message: types.Message):
-    # Отримуємо ім'я користувача
-    user_name = message.from_user.full_name
-    # Отримуємо логін, якщо є
-    username = f" (@{message.from_user.username})" if message.from_user.username else ""
-    
-    # Формуємо рядок
-    user_info = f"{user_name}{username}"
+@dp.message(F.chat.id != 940533533)
+async def send_to_admin(message: types.Message):
+    # Отримуємо ім'я та логін
+    user_info = f"{message.from_user.full_name}"
+    if message.from_user.username:
+        user_info += f" (@{message.from_user.username})"
     
     # Відправляємо адміну
-    admin_msg = await bot.send_message(
-        ADMIN_ID, 
-        f"📩 Заявка: {message.text}\n👤 Користувач: {user_info}\n🆔 ID: {message.chat.id}"
+    msg = await bot.send_message(
+        940533533, 
+        f"📩 Заявка: {message.text}\n👤 Хто: {user_info}\n🆔 ID: {message.chat.id}"
     )
     
-    # Зберігаємо зв'язок
-    user_registry[admin_msg.message_id] = message.chat.id
-    
-    await message.answer("✅ Заявку прийнято.")
+    # Зберігаємо ID у пам'яті
+    user_registry[msg.message_id] = message.chat.id
+    await message.answer("✅ Прийнято.")
 
-@dp.message(F.chat.id == ADMIN_ID, F.reply_to_message)
-async def reply_to_user(message: types.Message):
-    # Беремо ID повідомлення, на яке ми відповіли
-    replied_id = message.reply_to_message.message_id
+@dp.message(F.chat.id == 940533533, F.reply_to_message)
+async def admin_reply(message: types.Message):
+    # Беремо ID клієнта зі словника за ID повідомлення, на яке ми відповіли
+    target_id = user_registry.get(message.reply_to_message.message_id)
     
-    # Шукаємо в словнику
-    user_id = user_registry.get(replied_id)
-    
-    if user_id:
-        await bot.send_message(user_id, f"Відповідь від Віки:\n\n{message.text}")
+    if target_id:
+        await bot.send_message(target_id, f"Відповідь від Віки:\n{message.text}")
         await message.answer("✅ Відправлено!")
     else:
-        await message.answer("❌ Не можу знайти цей ID у пам'яті (можливо, був перезапуск).")
+        await message.answer("❌ Не можу знайти дані про цього клієнта (можливо, бот був перезапущений).")
 
 async def main():
     await dp.start_polling(bot)
