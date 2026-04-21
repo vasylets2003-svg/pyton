@@ -14,8 +14,9 @@ dp = Dispatcher()
 async def send_to_admin(message: types.Message):
     name = message.from_user.full_name
     username = f" (@{message.from_user.username})" if message.from_user.username else ""
-    
-    # Формуємо текст
+
+    # ВАЖЛИВО: Ми ховаємо ID в кінці повідомлення, 
+    # щоб при відповіді (Reply) ми могли його легко прочитати
     text = f"📩 Заявка: {message.text}\n👤 Хто: {name}{username}\n🆔 ID: {message.chat.id}"
     
     await bot.send_message(940533533, text)
