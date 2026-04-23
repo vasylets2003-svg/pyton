@@ -26,6 +26,10 @@ async def start_web_server():
     await site.start()
 
 # --- ЛОГІКА БОТА ---
+async def heartbeat():
+    while True:
+        await asyncio.sleep(86400) # Чекати 24 години
+        await bot.send_message(ADMIN_ID, "🤖 Бот на зв'язку! Все працює стабільно.")
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     if message.chat.id == ADMIN_ID:
@@ -60,6 +64,10 @@ async def reply_to_user(message: types.Message):
         await message.answer("❌ Не можу знайти ID в цьому повідомленні.")
 
 async def main():
+    async def main():
+    await start_web_server()
+    asyncio.create_task(heartbeat()) # Запускаємо фонову задачу "серцебиття"
+    await dp.start_polling(bot)
     # Запускаємо веб-сервер та бота
     await start_web_server()
     await dp.start_polling(bot)
