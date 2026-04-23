@@ -1,60 +1,68 @@
-import os
 import asyncio
-from aiohttp import web
+import logging
 from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiohttp import web
 
-# Токен береться з середовища Render
-bot = Bot(token=os.getenv('BOT_TOKEN'))
+# ВАШІ НАЛАШТУВАННЯ
+API_TOKEN = os.getenv('BOT_TOKEN')
+ADMIN_ID = 940533533
+
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
+user_registry = {}
 
-# --- ФУНКЦІЇ БОТА ---
-@dp.message(F.chat.id != 940533533)
-async def send_to_admin(message: types.Message):
-    # Отримуємо дані
-    name = message.from_user.full_name
-    username = f" (@{message.from_user.username})" if message.from_user.username else ""
-    
-    # ВАЖЛИВО: Ми ховаємо ID в кінці повідомлення, 
-    # щоб при відповіді (Reply) ми могли його легко прочитати
-    text = f"📩 Заявка: {message.text}\n👤 Хто: {name}{username}\n🆔 ID: {message.chat.id}"
-    
-    await bot.send_message(940533533, text)
-    await message.answer("✅ Заявку прийнято.")
-
-@dp.message(F.chat.id == 940533533, F.reply_to_message)
-async def admin_reply(message: types.Message):
-    # Беремо текст повідомлення, на яке ми відповіли
-    original_text = message.reply_to_message.text
-    
-    try:
-        # Шукаємо "🆔 ID:" і витягуємо все, що після нього
-        if "🆔 ID: " in original_text:
-            target_id = original_text.split("🆔 ID: ")[1].strip()
-            
-            # Відправляємо відповідь
-            await bot.send_message(target_id, f"Відповідь від Віки:\n\n{message.text}")
-            await message.answer("✅ Відправлено!")
-        else:
-            await message.answer("❌ Не можу знайти ID в цьому повідомленні.")
-    except Exception as e:
-        await message.answer(f"❌ Помилка: {e}")
-
-# --- ВЕБ-ЗАГЛУШКА ДЛЯ RENDER ---
-async def health_check(request):
-    return web.Response(text="Бот працює!")
+# --- ВЕБ-СЕРВЕР ДЛЯ RENDER (щоб не вимикав бота) ---
+async def handle(request):
+    return web.Response(text="Бот активний")
 
 async def start_web_server():
     app = web.Application()
-    app.router.add_get("/", health_check)
+    app.add_routes([web.get('/', handle)])
     runner = web.AppRunner(app)
     await runner.setup()
-    port = int(os.environ.get("PORT", 10000))
-    site = web.TCPSite(runner, "0.0.0.0", port)
+    site = web.TCPSite(runner, '0.0.0.0', 10000)
     await site.start()
 
+# --- ЛОГІКА БОТА ---
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    if message.chat.id == ADMIN_ID:
+        await message.answer("Вітаю, Віко! Бот на зв'язку.")
+    else:
+        await message.answer("Привіт! Напишіть домен, який потрібно розблокувати.")
+
+@dp.message(F.chat.id != ADMIN_ID)
+async def forward_to_admin(message: types.Message):
+    # Копіюємо текст клієнта (працює завжди)
+    admin_msg = await bot.send_message(
+        ADMIN_ID, 
+        f"📩 Заявка:\n{message.text}\n\nID користувача: {message.chat.id}"
+    )
+    # Зберігаємо ID
+    user_registry[admin_msg.message_id] = message.chat.id
+    await message.answer("✅ Заявку прийнято.")
+
+@dp.message(F.chat.id == ADMIN_ID, F.reply_to_message)
+async def reply_to_user(message: types.Message):
+    # Беремо ID, на яке відповіли
+    replied_id = message.reply_to_message.message_id
+    user_id = user_registry.get(replied_id)
+    
+    if user_id:
+        try:
+            await bot.send_message(user_id, f"Відповідь від Віки:\n\n{message.text}")
+            await message.answer("✅ Відправлено!")
+        except Exception as e:
+            await message.answer(f"❌ Помилка: {e}")
+    else:
+        await message.answer("❌ Не можу знайти ID в цьому повідомленні.")
+
 async def main():
+    # Запускаємо веб-сервер та бота
     await start_web_server()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
