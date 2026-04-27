@@ -44,6 +44,11 @@ async def forward_to_admin(message: types.Message):
         ADMIN_ID, 
         f"📩 Заявка:\n{message.text}\n\nID користувача: {message.chat.id}"
     )
+    await bot.copy_message(
+    chat_id=940533533, 
+    from_chat_id=message.chat.id, 
+    message_id=message.message_id
+)
     # Зберігаємо ID
     user_registry[admin_msg.message_id] = message.chat.id
     await message.answer("✅ Заявку прийнято.")
@@ -62,7 +67,11 @@ async def reply_to_user(message: types.Message):
             await message.answer(f"❌ Помилка: {e}")
     else:
         await message.answer("❌ Не можу знайти ID в цьому повідомленні.")
-
+await bot.copy_message(
+    chat_id=target_id,
+    from_chat_id=message.chat.id,
+    message_id=message.message_id
+)
 async def main():
     async def main():
     await start_web_server()
